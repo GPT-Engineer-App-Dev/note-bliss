@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Box, Heading, Input, Button, Text, VStack, HStack, IconButton, useToast } from "@chakra-ui/react";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { Box, Heading, Input, Button, Text, VStack, HStack, IconButton, useToast, Grid, Image } from "@chakra-ui/react";
+import { FaPlus, FaTrash, FaImage } from "react-icons/fa";
 
 const Index = () => {
   const [notes, setNotes] = useState([]);
@@ -52,8 +52,18 @@ const Index = () => {
     setEditingNoteId(null);
   };
 
+  const handleImageUpload = (e, noteId) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      const base64data = reader.result;
+      setNotes((prevNotes) => prevNotes.map((note) => (note.id === noteId ? { ...note, image: base64data } : note)));
+    };
+  };
+
   return (
-    <Box maxWidth="600px" margin="auto" p={4}>
+    <Box maxWidth="1200px" margin="auto" p={4}>
       <Heading mb={8}>Note Taking App</Heading>
       <form onSubmit={handleSubmit}>
         <HStack mb={4}>
@@ -63,25 +73,38 @@ const Index = () => {
           </Button>
         </HStack>
       </form>
-      <VStack spacing={4} align="stretch">
+      <Grid templateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap={4}>
         {notes.map((note) => (
-          <HStack key={note.id} justify="space-between">
+          <Box key={note.id} bg="gray.100" p={4} borderRadius="md" boxShadow="md">
             {editingNoteId === note.id ? (
-              <Input
-                value={note.text}
-                onChange={(e) => handleEdit(note.id, e.target.value)}
-                onBlur={() => setEditingNoteId(null)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") setEditingNoteId(null);
-                }}
-              />
+              <>
+                <Input
+                  value={note.text}
+                  onChange={(e) => handleEdit(note.id, e.target.value)}
+                  onBlur={() => setEditingNoteId(null)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") setEditingNoteId(null);
+                  }}
+                />
+                <HStack mt={2}>
+                  <input type="file" onChange={(e) => handleImageUpload(e, note.id)} style={{ display: "none" }} id={`image-input-${note.id}`} />
+                  <label htmlFor={`image-input-${note.id}`}>
+                    <IconButton icon={<FaImage />} aria-label="Attach Image" as="span" />
+                  </label>
+                </HStack>
+              </>
             ) : (
-              <Text onClick={() => setEditingNoteId(note.id)}>{note.text}</Text>
+              <>
+                <Text onClick={() => setEditingNoteId(note.id)} mb={2}>
+                  {note.text}
+                </Text>
+                {note.image && <Image src={note.image} alt="Note Image" mb={2} />}
+              </>
             )}
             <IconButton icon={<FaTrash />} onClick={() => handleDelete(note.id)} aria-label="Delete note" />
-          </HStack>
+          </Box>
         ))}
-      </VStack>
+      </Grid>
     </Box>
   );
 };
